@@ -1,0 +1,134 @@
+-----------------------------component file-------------------------------------
+import { Component, OnInit } from '@angular/core';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTableDataSource, MatSort } from '@angular/material';
+import { AppService } from '../app.service';
+import { AppDetails, putDetail } from '../appdetails';
+import { FormControl, FormGroup, Validator, FormBuilder, Validators } from '@angular/forms';
+import {Observable} from 'rxjs';
+
+@Component({
+  selector: 'app-form',
+  templateUrl: './form.component.html',
+  styleUrls: ['./form.component.css'],
+  providers: [AppService]
+})
+export class FormComponent implements OnInit {
+  foods: any[] = [];
+  category: any[] = [];
+  appnum: number[] = [];
+  pdetails: AppDetails;
+  aptnum: number;
+  rname: string;
+  rForm: FormGroup;
+  contact: string;
+  date = Date.now();
+  constructor(private appService: AppService) { }
+  desp:string;
+  val:string;
+  newHero: putDetail
+  ngOnInit() {
+    this.rForm = new FormGroup({
+      'description': new FormControl(null, Validators.required),
+      'catView': new FormControl(null, Validators.required),
+    });
+
+    this.appService.getdetails()
+      .subscribe(data => this.pdetails = data);
+
+    this.category = [
+      { value: 'cat-0', viewValue: 'Electric' },
+      { value: 'cat-1', viewValue: 'Civil/Mansion' },
+      { value: 'cat-2', viewValue: 'Sanitary/Sewage' },
+      { value: 'cat-3', viewValue: 'Plumbing' },
+      { value: 'cat-4', viewValue: 'Maintainance fee reconciliation' },
+      { value: 'cat-5', viewValue: 'Saftey/Security' },
+      { value: 'cat-6', viewValue: 'Disturbance from Neighbours' },
+      { value: 'cat-7', viewValue: 'Others' },
+    ]
+  }
+  onChange(deviceValue) {
+    this.aptnum = deviceValue;
+    for (let item of this.pdetails) {
+      if (item.appn == this.aptnum) {
+        this.rname = item.rname;
+        this.contact = item.pcNum;
+      }
+    }
+  }
+  onSubmit() {
+    this.desp=this.rForm.get('description').value;
+    this.val=this.rForm.get('catView').value;
+    console.log("Raised By: " + this.rname,
+      "Appartment Number: " + this.aptnum,
+      "Raised On: " + this.date,
+      "Contact Number: " + this.contact,
+      "Status: " + "Open",
+      "Compaint Summary: " + this.desp,
+      "Category: " + this.val)
+      this.newHero = {
+        "RaisedBy": this.rname,
+        "AppartmentNumber": this.aptnum,
+        "RaisedOn": this.date,
+        "ContactNumber": this.contact,
+        "Status": 'Open',
+        "CompaintSummary": this.desp,
+        "Category": this.val
+      };
+      this.appService.putdetails(this.newHero) 
+      .subscribe()
+  }
+    
+  
+//   // addHero (hero: Hero): Observable<Hero> {
+//   //   return this.http.post<Hero>(this.heroesUrl, hero, httpOptions)
+}
+--------------------------------service file--------------------------------------------
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import {Observable} from 'rxjs';
+import { AppDetails,putDetail } from './appdetails'
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AppService {
+
+  constructor(private http:HttpClient) { }
+  getdetails():Observable<AppDetails>{
+    return this.http.get<AppDetails>('http://localhost:7070/api/appDetails')
+  }
+  // putdetails():Observable<putDetail>{
+  //   return this.http.post<putDetail>('http://localhost:7070/api/complains',this.putdetails)
+  // }
+
+  putdetails (hero: putDetail): Observable<putDetail> {
+    return this.http.post<putDetail>('http://localhost:7070/api/complains', hero);
+      
+  }
+  getcomplains():Observable<putDetail>{
+    return this.http.get<putDetail>('http://localhost:7070/api/complains');
+  }
+}
+--------------------------------------Interface--------------------------------------------------
+export interface AppDetails extends Array<AppDetails> {
+        "appn":number,
+    "rname":string,
+    "pcNum":string,
+    "scNum":string,
+    "pemail":string,
+    "semail":string
+    }
+export interface putDetail {
+    
+    "RaisedBy":string,
+    "AppartmentNumber":number,
+    "RaisedOn":number,
+    "ContactNumber":string,
+    "Status":string,
+    "CompaintSummary":string,
+    "Category":string
+}
+
+//export interface MyInterface extends Array<MyType> { }
